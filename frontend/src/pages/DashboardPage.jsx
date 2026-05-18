@@ -15,15 +15,16 @@ const DashboardPage = () => {
   });
 
   if (isLoading) return <div className="page-loading"><div className="spinner"></div></div>;
+  if (!data) return <div className="page-error">Failed to load dashboard data</div>;
 
   const { tasks, stats } = data;
-  const overdueCount = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'DONE').length;
+  const overdueCount = stats.overdue || 0;
 
   const chartData = [
-    { name: 'To Do', value: stats.TODO, color: 'var(--text-3)' },
-    { name: 'In Progress', value: stats.IN_PROGRESS, color: 'var(--primary)' },
-    { name: 'In Review', value: stats.IN_REVIEW, color: 'var(--warning)' },
-    { name: 'Done', value: stats.DONE, color: 'var(--success)' },
+    { name: 'To Do', value: stats.byStatus?.TODO || 0, color: 'var(--text-3)' },
+    { name: 'In Progress', value: stats.byStatus?.IN_PROGRESS || 0, color: 'var(--primary)' },
+    { name: 'In Review', value: stats.byStatus?.IN_REVIEW || 0, color: 'var(--warning)' },
+    { name: 'Done', value: stats.byStatus?.DONE || 0, color: 'var(--success)' },
   ];
 
   return (
@@ -39,21 +40,21 @@ const DashboardPage = () => {
         <div className="stat-card">
           <div className="stat-icon"><Layout size={24} /></div>
           <div className="stat-content">
-            <span className="stat-value">{tasks.length}</span>
+            <span className="stat-value">{stats.total || 0}</span>
             <span className="stat-label">Total Tasks</span>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon" style={{ color: 'var(--primary)' }}><Clock size={24} /></div>
           <div className="stat-content">
-            <span className="stat-value">{stats.IN_PROGRESS}</span>
+            <span className="stat-value">{stats.byStatus?.IN_PROGRESS || 0}</span>
             <span className="stat-label">In Progress</span>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon" style={{ color: 'var(--success)' }}><CheckCircle2 size={24} /></div>
           <div className="stat-content">
-            <span className="stat-value done">{stats.DONE}</span>
+            <span className="stat-value done">{stats.byStatus?.DONE || 0}</span>
             <span className="stat-label">Completed</span>
           </div>
         </div>
