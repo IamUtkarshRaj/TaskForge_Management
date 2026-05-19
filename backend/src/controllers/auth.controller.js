@@ -29,7 +29,7 @@ const signup = async (req, res, next) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    res.status(201).json({ user, accessToken: tokens.accessToken });
+    res.status(201).json({ user, accessToken: tokens.accessToken, refreshToken: tokens.refreshToken });
   } catch (err) {
     next(err);
   }
@@ -55,7 +55,7 @@ const login = async (req, res, next) => {
     });
 
     const { password: _, ...safeUser } = user;
-    res.json({ user: safeUser, accessToken: tokens.accessToken });
+    res.json({ user: safeUser, accessToken: tokens.accessToken, refreshToken: tokens.refreshToken });
   } catch (err) {
     next(err);
   }
@@ -63,7 +63,7 @@ const login = async (req, res, next) => {
 
 const refresh = async (req, res, next) => {
   try {
-    const token = req.cookies.refreshToken;
+    const token = req.cookies.refreshToken || req.body.refreshToken;
     if (!token) return res.status(401).json({ error: 'No refresh token' });
 
     const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
@@ -73,8 +73,16 @@ const refresh = async (req, res, next) => {
     });
     if (!user) return res.status(401).json({ error: 'User not found' });
 
-    const accessToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '15m' });
-    res.json({ accessToken, user });
+    const tokens = generateTokens(user.id);
+
+    res.cookie('refreshToken', tokens.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.json({ accessToken: tokens.accessToken, refreshToken: tokens.refreshToken, user });
   } catch (err) {
     res.status(401).json({ error: 'Invalid or expired refresh token' });
   }

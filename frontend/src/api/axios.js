@@ -32,12 +32,17 @@ api.interceptors.response.use(
     if (err.response?.status === 401 && !original._retry && !original.url.includes('/auth/refresh')) {
       original._retry = true;
       try {
-        const { data } = await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
+        const localRefreshToken = localStorage.getItem('refreshToken');
+        const { data } = await axios.post(`${API_URL}/auth/refresh`, { refreshToken: localRefreshToken }, { withCredentials: true });
         setAccessToken(data.accessToken);
+        if (data.refreshToken) {
+          localStorage.setItem('refreshToken', data.refreshToken);
+        }
         original.headers.Authorization = `Bearer ${data.accessToken}`;
         return api(original);
       } catch (refreshErr) {
         clearAccessToken();
+        localStorage.removeItem('refreshToken');
         // Only redirect if not already on login/signup to avoid infinite reload
         if (!['/login', '/signup', '/'].includes(window.location.pathname)) {
           window.location.href = '/login';
@@ -49,6 +54,7 @@ api.interceptors.response.use(
     // If it's a 401 on a refresh request itself, just clear and potentially redirect
     if (err.response?.status === 401 && original.url.includes('/auth/refresh')) {
       clearAccessToken();
+      localStorage.removeItem('refreshToken');
       if (!['/login', '/signup', '/'].includes(window.location.pathname)) {
         window.location.href = '/login';
       }

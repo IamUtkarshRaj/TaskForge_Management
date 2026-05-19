@@ -3,8 +3,8 @@ import api from './axios';
 export const authApi = {
   signup: (data) => api.post('/auth/signup', data),
   login: (data) => api.post('/auth/login', data),
-  logout: () => api.post('/auth/logout'),
-  refresh: () => api.post('/auth/refresh'),
+  logout: (refreshToken) => api.post('/auth/logout', { refreshToken }),
+  refresh: (refreshToken) => api.post('/auth/refresh', { refreshToken }),
   me: () => api.get('/auth/me'),
   updateMe: (data) => api.patch('/auth/me', data),
 };
